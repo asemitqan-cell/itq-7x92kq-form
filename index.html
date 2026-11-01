@@ -7,42 +7,42 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 :root{
-  --who:#1D4ED8; --who-t:#DBEAFE; --who-b:#93C5FD;
-  --amt:#15803D; --amt-t:#DCFCE7; --amt-b:#86EFAC;
-  --typ:#7E22CE; --typ-t:#FEF9C3; --typ-b:#FACC15;
-  --acc:#C2410C; --acc-t:#CFFAFE; --acc-b:#22D3EE;
-  --dat:#0F766E; --dat-t:#FCE7F3; --dat-b:#F472B6;
-  --msc:#475569; --msc-t:#F1F5F9; --msc-b:#CBD5E1;
+  --who:#EBBF97; --who-t:#FCF3EA; --who-b:#F1D6BC;
+  --amt:#CFD8BF; --amt-t:#F5F8F0; --amt-b:#E0E7D3;
+  --typ:#E6D5B0; --typ-t:#FBF7EC; --typ-b:#EEE1C4;
+  --acc:#DCC9BF; --acc-t:#F9F3F0; --acc-b:#E9DBD3;
+  --dat:#C6D0D6; --dat-t:#F3F6F8; --dat-b:#DAE1E6;
+  --msc:#D3CFC7; --msc-t:#F7F6F3; --msc-b:#E3E0D9;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:#E2E8F0;color:#0F172A;font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
+html,body{margin:0;background:#F7F4EE;color:#2B2B2B;font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
 body{padding:12px 12px 120px}
-h1{font-size:18px;margin:4px 4px 12px;text-align:center;color:#0F172A}
-.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(15,23,42,.15)}
-.lab{display:inline-block;color:#fff;font-weight:700;font-size:15px;padding:4px 12px;border-radius:999px;margin-bottom:10px}
+h1{font-size:18px;margin:4px 4px 12px;text-align:center;color:#2B2B2B}
+.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;border:1px solid #ECE7DC}
+.lab{display:inline-block;color:#2B2B2B;font-weight:700;font-size:15px;padding:4px 12px;border-radius:999px;margin-bottom:10px}
 .lab small{font-weight:400;opacity:.9}
-input[type=text],input[type=date],input[type=search],select{width:100%;font:inherit;padding:12px;border-radius:10px;border:2px solid;color:#0F172A;outline:none}
-input:focus,select:focus{box-shadow:0 0 0 3px rgba(15,23,42,.15)}
+input[type=text],input[type=date],input[type=search],select{width:100%;font:inherit;padding:12px;border-radius:10px;border:1.5px solid;color:#2B2B2B;outline:none}
+input:focus,select:focus{box-shadow:0 0 0 3px rgba(43,43,43,.10)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{flex:1 1 calc(50% - 8px);min-width:120px;font:inherit;text-align:right;padding:11px 12px;border-radius:10px;border:2px solid;cursor:pointer;color:#0F172A}
-.chip.sel{color:#fff;font-weight:700}
+.chip{flex:1 1 calc(50% - 8px);min-width:120px;font:inherit;text-align:right;padding:11px 12px;border-radius:10px;border:1.5px solid;cursor:pointer;color:#2B2B2B}
+.chip.sel{color:#2B2B2B;font-weight:700}
 .chip .num{display:block;font-size:12px;opacity:.85;direction:ltr;text-align:right}
-.sub{font-size:13px;font-weight:700;margin:10px 0 6px;color:#334155}
+.sub{font-size:13px;font-weight:700;margin:10px 0 6px;color:#5E5A52}
 .sub:first-of-type{margin-top:0}
 select[size]{padding:4px}
 select option{padding:8px}
 .picked{margin-top:6px;font-size:14px;font-weight:700}
-.sum{background:#0F172A;color:#fff}
+.sum{background:#2F2D2A;color:#FAF7F0}
 .sum h2{font-size:16px;margin:0 0 8px}
 .sum .row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:15px}
 .sum .row:last-child{border:0}
 .sum .k{opacity:.8}
-.sum .miss{color:#FCA5A5}
+.sum .miss{color:#F0B9A0}
 .sum .v{font-weight:700;text-align:left}
-.btn{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#16A34A;color:#fff;border:0;border-radius:14px;font:inherit;font-weight:800;font-size:18px;padding:15px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
-.btn:disabled{background:#94A3B8}
-.warn{background:#FEF3C7;border:2px solid #F59E0B;border-radius:12px;padding:10px;margin-bottom:12px;font-size:14px}
-.note{font-size:13px;color:#475569;margin:-4px 4px 12px;text-align:center}
+.btn{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#2F2D2A;color:#FAF7F0;border:0;border-radius:14px;font:inherit;font-weight:800;font-size:18px;padding:15px;box-shadow:0 3px 10px rgba(0,0,0,.12)}
+.btn:disabled{background:#BDB6A8}
+.warn{background:#FBF1DD;border:1.5px solid #E6C58E;border-radius:12px;padding:10px;margin-bottom:12px;font-size:14px}
+.note{font-size:13px;color:#7A766D;margin:-4px 4px 12px;text-align:center}
 </style>
 </head>
 <body>
@@ -89,8 +89,8 @@ const lvl = (root) => [
   {...C('l3','التفصيل','typ', v => (DATA[root].l3[v.l2]||[])), show:v => (DATA[root].l3[v.l2]||[]).length>0}
 ];
 const FORMS = {
-  pay: () => [T('client','اسم العميل','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
-  opay: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
+  pay: () => [T('client','اسم العميل (ثلاثي)','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
+  opay: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل (ثلاثي)','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
   cash: () => [C('kind','النوع','typ',()=>['إيراد','صرف']),
                T('party', null,'who'), T('bayan','البيان','msc'), N('amount'), DT(), T('voucher','رقم الوصل','acc')],
   sup: () => [C('supplier','المورد','who',()=>DATA.suppliers), C('stype','النوع','typ',()=>DATA.stypes), N('amount'),
@@ -99,7 +99,7 @@ const FORMS = {
   inc: () => [...lvl('inc'), N('amount'), ACC('acc','اتحصّل في'), VCH('acc'), DT(), T('note','ملاحظة','msc',false)],
   cus: () => [C('ctype','نوع العهدة','typ',()=>DATA.ctypes), C('emp','الموظف','who',()=>DATA.emps), N('amount'), ACC('acc','الحساب'), VCH('acc'), DT()],
   adv: () => [C('atype','النوع','typ',()=>DATA.atypes), C('emp','الموظف','who',()=>DATA.emps), N('amount'), ACC('acc','الحساب'), VCH('acc'), DT()],
-  sale: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل','who'), T('project','رقم المشروع','msc'), N('amount'), DT()],
+  sale: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل (ثلاثي)','who'), T('project','رقم المشروع','msc'), N('amount'), DT()],
   xfer: () => [ACC('acc','التحويل من'), ACC('acc2','التحويل إلى'), N('amount'), VCH('acc','acc2'), DT()]
 };
 
@@ -112,7 +112,7 @@ if (TYPE === 'cash') S.vals.voucher = S.vals.voucher || '';
 function fields() {
   const f = (FORMS[TYPE] || FORMS.pay)();
   return f.filter(x => !x.show || x.show(S.vals)).map(x => {
-    if (x.key === 'party') return {...x, label: S.vals.kind === 'صرف' ? 'اسم المستلم' : (S.vals.kind === 'إيراد' ? 'اسم اللي دفع' : 'اسم اللي دفع / المستلم')};
+    if (x.key === 'party') return {...x, label: S.vals.kind === 'صرف' ? 'اسم المستلم (ثلاثي)' : (S.vals.kind === 'إيراد' ? 'اسم اللي دفع (ثلاثي)' : 'اسم اللي دفع / المستلم (ثلاثي)')};
     return x;
   });
 }
@@ -152,7 +152,7 @@ function bigList(f, list) {
   const sel = el('select', {size:'5'});
   s.style.background = col(f.g,'t'); s.style.borderColor = col(f.g,'b');
   sel.style.background = col(f.g,'t'); sel.style.borderColor = col(f.g,'b');
-  const picked = el('div', {class:'picked', style:'color:'+col(f.g,'c')});
+  const picked = el('div', {class:'picked', style:'color:#4A4741'});
   const fill = () => {
     const q = s.value.trim();
     sel.innerHTML = '';
@@ -286,7 +286,7 @@ function summary() {
   const b = document.getElementById('send');
   b.textContent = p.length ? 'لسه ناقص: ' + p.length + ' حقل' : 'إرسال ✅';
   b.disabled = false;
-  b.style.background = p.length ? '#94A3B8' : '#16A34A';
+  b.style.background = p.length ? '#BDB6A8' : '#2F2D2A';
   if (tg && tg.MainButton) { tg.MainButton.hide(); }
 }
 

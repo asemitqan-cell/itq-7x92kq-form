@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+/* المستجدات: بيج + أسود + أوف وايت */
+body.beige{--bg:#F4EFE4;--card:#FFFCF6;--ink:#1D1D1B;--mut:#80786A;--line:#E8DFCC;--a:#1D1D1B;--b:#D8C8A6;--soft:#EFE7D5}
+/* التقارير: برتقاني فاتح + أسود + أوف وايت/رصاصي */
+body.orange{--bg:#F5F3EE;--card:#FFFFFF;--ink:#1F1F1F;--mut:#7B7871;--line:#E6E2DA;--a:#F1B07A;--b:#D5D2CB;--soft:#FBEFE3}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
+body{padding:14px 12px 28px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;margin:2px 4px 14px}
+.top h1{font-size:20px;margin:0}
+.top small{color:var(--mut);font-size:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.big{font-size:28px;font-weight:800;letter-spacing:.2px}
+.big small{font-size:14px;font-weight:600;color:var(--mut)}
+.delta{font-size:13px;color:var(--mut);margin:2px 0 10px}
+.delta b{color:var(--ink)}
+.pair{display:grid;gap:6px}
+.row{display:grid;grid-template-columns:78px 1fr 84px;align-items:center;gap:8px;font-size:13px}
+.row .nm{color:var(--mut)}
+.row .vl{text-align:left;font-weight:700;direction:ltr}
+.track{height:12px;border-radius:999px;background:var(--soft);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:var(--a)}
+.fill.b{background:var(--b)}
+.list{display:grid;gap:9px}
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px}
+.item .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .vl{font-weight:700;direction:ltr}
+.item .track{grid-column:1 / -1}
+.empty{color:var(--mut);font-size:13px;padding:6px 0}
+.donut{display:flex;gap:14px;align-items:center;margin:6px 0 12px}
+.ring{width:96px;height:96px;border-radius:50%;flex:none;position:relative}
+.ring::after{content:"";position:absolute;inset:18px;background:var(--card);border-radius:50%}
+.legend{display:grid;gap:6px;font-size:13px;flex:1}
+.legend div{display:flex;justify-content:space-between;gap:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:6px}
+.legend b{direction:ltr}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:var(--soft);border-radius:12px;padding:10px}
+.kpi small{display:block;color:var(--mut);font-size:12px}
+.kpi b{font-size:18px}
+.btn{width:100%;border:0;border-radius:12px;background:var(--ink);color:var(--card);font:inherit;font-weight:700;padding:12px;margin-bottom:12px}
+.note{border-top:1px solid var(--line);padding:10px 0;font-size:14px;line-height:1.7;white-space:pre-wrap}
+.note:first-child{border-top:0}
+.note small{display:block;color:var(--mut);font-size:12px}
+.mv{display:grid;grid-template-columns:62px 1fr auto;gap:8px;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+.mv:first-child{border-top:0}
+.mv span:first-child{color:var(--mut)}
+.mv b{direction:ltr}
+.err{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center;color:var(--mut)}
+</style>
+</head>
+<body class="orange">
+<div id="app"></div>
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const fmt = n => Math.round(Number(n) || 0).toLocaleString('en-US');
+const $ = (t, cls, html) => { const e = document.createElement(t); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+const esc = s => String(s ?? '').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+function delta(cur, prev, label) {
+  const d = cur - prev;
+  if (Math.abs(d) < 0.5) return `● زي ${label}`;
+  return d > 0 ? `▲ زاد <b>${fmt(d)}</b> عن ${label}` : `▼ قل <b>${fmt(-d)}</b> عن ${label}`;
+}
+
+/* كارت مقارنة: النهارده/الشهر الحالي ضد اللي قبله */
+function cmpCard(title, cur, prev, labels) {
+  const c = $('div', 'card');
+  const max = Math.max(Math.abs(cur), Math.abs(prev), 1);
+  c.innerHTML = `<h2>${esc(title)}</h2><div class="big">${fmt(cur)} <small>ج</small></div>
+    <div class="delta">${delta(cur, prev, labels[1])}</div>
+    <div class="pair">
+      <div class="row"><span class="nm">${esc(labels[0])}</span><div class="track"><div class="fill" style="width:${Math.abs(cur)/max*100}%"></div></div><span class="vl">${fmt(cur)}</span></div>
+      <div class="row"><span class="nm">${esc(labels[1])}</span><div class="track"><div class="fill b" style="width:${Math.abs(prev)/max*100}%"></div></div><span class="vl">${fmt(prev)}</span></div>
+    </div>`;
+  return c;
+}
+
+/* قايمة بأعمدة أفقية */
+function barsCard(title, list, total, totalLabel) {
+  const c = $('div', 'card');
+  c.append($('h2', '', esc(title)));
+  if (total !== undefined) c.append($('div', 'big', `${fmt(total)} <small>${esc(totalLabel || 'ج')}</small>`));
+  if (!list || !list.length) { c.append($('div', 'empty', 'مفيش بيانات')); return c; }
+  const max = Math.max(...list.map(x => Math.abs(x[1])), 1);
+  const box = $('div', 'list'); box.style.marginTop = '10px';
+  list.forEach(([n, v]) => box.append($('div', 'item',
+    `<span class="nm">${esc(n)}</span><span class="vl">${fmt(v)}</span><div class="track"><div class="fill ${v < 0 ? 'b' : ''}" style="width:${Math.abs(v)/max*100}%"></div></div>`)));
+  c.append(box);
+  return c;
+}
+
+function head(title, d) {
+  const t = $('div', 'top', `<h1>${esc(title)}</h1><small>${esc(d.d || '')} · آخر تحديث ${esc(d.t || '')}</small>`);
+  return t;
+}
+
+/* ---------- المستجدات ---------- */
+function viewNews(d, root) {
+  document.body.className = 'beige';
+  root.append(head('📰 مستجدات اليوم', d));
+  (d.m || []).forEach(m => root.append(cmpCard(m[0], m[1], m[2], ['النهارده', 'امبارح'])));
+  root.append(barsCard('اللي دخل الحسابات النهارده', d.ai));
+  root.append(barsCard('اللي خرج من الحسابات النهارده', d.ao));
+  const btn = $('button', 'btn', '📝 ملاحظات المدير'); btn.type = 'button';
+  const box = $('div', 'card'); box.style.display = 'none';
+  if (!d.n || !d.n.length) box.append($('div', 'empty', 'مفيش ملاحظات'));
+  (d.n || []).forEach(n => box.append($('div', 'note', `<small>${esc(n[0])}</small>${esc(n[1])}`)));
+  btn.onclick = () => { box.style.display = box.style.display === 'none' ? 'block' : 'none'; };
+  root.append(btn, box);
+}
+
+/* ---------- تقارير م/ أحمد ---------- */
+function viewReports(d, root) {
+  document.body.className = 'orange';
+  root.append(head('📊 التقارير', d));
+  const l = d.liq || {};
+  const parts = [['خزن', l.c, '#F1B07A'], ['بنوك', l.b, '#1F1F1F'], ['فودافون كاش', l.w, '#D5D2CB'], ['محفظة احتياطية', l.k, '#F7DCC3']];
+  const pos = parts.map(p => Math.max(p[1] || 0, 0)); const sum = pos.reduce((a, b) => a + b, 0) || 1;
+  let acc = 0; const stops = parts.map((p, i) => { const s = acc; acc += pos[i] / sum * 100; return `${p[2]} ${s}% ${acc}%`; }).join(',');
+  const c = $('div', 'card');
+  c.innerHTML = `<h2>💰 الموقف النقدي</h2><div class="big">${fmt(l.t)} <small>ج</small></div>
+    <div class="donut"><div class="ring" style="background:conic-gradient(${stops})"></div>
+    <div class="legend">${parts.map(p => `<div><span><i style="background:${p[2]}"></i>${p[0]}</span><b>${fmt(p[1])}</b></div>`).join('')}</div></div>`;
+  root.append(c);
+  root.append(barsCard('أكبر الحسابات رصيدًا', d.la));
+  root.append(barsCard('👥 العملاء (المستحق لنا)', d.cli, d.ct));
+  root.append(barsCard('🏭 الموردين (المستحق علينا)', d.sup, d.st));
+  const e = d.e || [0, 0], s = d.sal || [0, 0, 0];
+  root.append(cmpCard('📉 مصروفات ' + (d.mn || 'الشهر'), e[0], e[1], ['الشهر ده', 'الشهر اللي فات']));
+  root.append(barsCard('المصروفات حسب البند', d.exp));
+  root.append(cmpCard('🧾 مبيعات ' + (d.mn || 'الشهر') + ' (' + (s[2] || 0) + ' عملية)', s[0], s[1], ['الشهر ده', 'الشهر اللي فات']));
+}
+
+/* ---------- عهدة م/ جمعه ---------- */
+function viewCustody(d, root) {
+  document.body.className = 'orange';
+  root.append(head('👤 عهدتك الشخصية', d));
+  const max = Math.max(d.got, d.sp, 1);
+  const c = $('div', 'card');
+  c.innerHTML = `<h2>💼 الرصيد الحالي</h2><div class="big">${fmt(d.bal)} <small>ج</small></div>
+    <div class="delta">${d.bal < -0.5 ? '⚠️ المنصرف أكبر من المستلم' : 'المستلم − المنصرف'}</div>
+    <div class="pair">
+      <div class="row"><span class="nm">المستلم</span><div class="track"><div class="fill" style="width:${d.got/max*100}%"></div></div><span class="vl">${fmt(d.got)}</span></div>
+      <div class="row"><span class="nm">المنصرف</span><div class="track"><div class="fill b" style="width:${d.sp/max*100}%"></div></div><span class="vl">${fmt(d.sp)}</span></div>
+    </div>`;
+  root.append(c);
+  const m = $('div', 'card'); m.append($('h2', '', 'آخر الحركات'));
+  if (!d.mv || !d.mv.length) m.append($('div', 'empty', 'مفيش حركات'));
+  (d.mv || []).forEach(x => m.append($('div', 'mv', `<span>${esc(x[0])}</span><span>${esc(x[1])}</span><b>${x[2] >= 0 ? '▲ ' : '▼ '}${fmt(Math.abs(x[2]))}</b>`)));
+  root.append(m);
+}
+
+/* ---------- تقارير م/ جمعه ---------- */
+function viewGReports(d, root) {
+  document.body.className = 'orange';
+  root.append(head('📊 التقرير', d));
+  root.append(barsCard('💰 التحصيلات (دفعات البياعين)', d.pay, d.pt));
+  root.append(barsCard('🧾 تسوية العهدات', d.stl, d.st));
+}
+
+/* ---------- فك البيانات ---------- */
+async function load() {
+  const qs = new URLSearchParams(location.search);
+  let s = (qs.get('d') || '').replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  const bin = Uint8Array.from(atob(s), ch => ch.charCodeAt(0));
+  if (typeof DecompressionStream === 'undefined') throw new Error('nodecomp');
+  const ds = new DecompressionStream('deflate');
+  const text = await new Response(new Blob([bin]).stream().pipeThrough(ds)).text();
+  return { v: qs.get('v') || 'rep', d: JSON.parse(text) };
+}
+
+(async () => {
+  const root = document.getElementById('app');
+  try {
+    const { v, d } = await load();
+    ({ news: viewNews, rep: viewReports, cus: viewCustody, grep: viewGReports }[v] || viewReports)(d, root);
+  } catch (e) {
+    root.append($('div', 'err', e.message === 'nodecomp'
+      ? 'تليجرام عندك قديم شوية ومش بيدعم عرض اللوحة. حدّث التطبيق وجرّب تاني.'
+      : 'مقدرتش أقرأ البيانات. ارجع للبوت واضغط الزرار تاني.'));
+  }
+})();
+</script>
+</body>
+</html>
