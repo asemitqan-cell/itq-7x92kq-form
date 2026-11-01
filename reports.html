@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>تقرير</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#FAF7F2;--ink:#1C1C1C;--mut:#6B665E;--or:#F0B27F;--or2:#FBE6D2;--or3:#E39A5E;--line:#E9E2D6;--card:#FFFFFF}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
+body{padding:0 12px calc(24px + env(safe-area-inset-bottom,0px))}
+.top{background:var(--ink);color:var(--bg);margin:0 -12px 14px;padding:16px 16px 14px;border-radius:0 0 18px 18px}
+.top h1{margin:0;font-size:19px}
+.top .sub{opacity:.75;font-size:13px;margin-top:4px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h2:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--or)}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px}
+.kpi .n{font-size:13px;color:var(--mut)}
+.kpi .v{font-size:21px;font-weight:800;margin:4px 0}
+.kpi.big{grid-column:1/-1;background:var(--or2);border-color:#F2D3B4}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px}
+.pill.up{background:var(--or);color:var(--ink)}
+.pill.down{background:var(--ink);color:var(--bg)}
+.pill.same{background:var(--line);color:var(--mut)}
+.bar{margin:10px 0}
+.bar .l{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:4px}
+.bar .l b{white-space:nowrap}
+.track{height:12px;background:var(--bg);border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.fill{height:100%;background:var(--or);border-radius:999px}
+.fill.dk{background:var(--ink)}
+.stack{display:flex;height:22px;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin:6px 0 12px}
+.stack div{height:100%}
+.leg{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;color:var(--mut)}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:5px}
+.cmp{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--mut);margin-top:2px}
+.note{background:var(--or2);border-radius:12px;padding:10px;margin:8px 0;font-size:14px}
+.note small{display:block;color:var(--mut);margin-bottom:3px}
+.empty{color:var(--mut);font-size:14px;padding:6px 0}
+.err{background:var(--or2);border:1px solid var(--or);border-radius:14px;padding:14px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="top"><h1 id="t">…</h1><div class="sub" id="s"></div></div>
+<div id="app"></div>
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+const qs = new URLSearchParams(location.search);
+const $ = id => document.getElementById(id);
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const clean = s => String(s).replace(/_/g,' ');
+function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; }
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function delta(cur, prev) {
+  if (prev === undefined || prev === null) return '';
+  if (!prev && !cur) return '<span class="pill same">— ثابت</span>';
+  if (!prev) return '<span class="pill up">▲ جديد</span>';
+  const p = Math.round((cur - prev) / Math.abs(prev) * 100);
+  if (p === 0) return '<span class="pill same">— ثابت</span>';
+  return p > 0 ? `<span class="pill up">▲ زاد ${p}%</span>` : `<span class="pill down">▼ قل ${Math.abs(p)}%</span>`;
+}
+function kpi(name, cur, prev, prevName, big) {
+  const k = el('div', 'kpi' + (big ? ' big' : ''));
+  k.innerHTML = `<div class="n">${esc(name)}</div><div class="v">${fmt(cur)} <small style="font-size:13px;font-weight:400">ج</small></div>` +
+    (prev !== undefined ? `<div class="cmp">${delta(cur, prev)}<span>${esc(prevName)}: ${fmt(prev)}</span></div>` : '');
+  return k;
+}
+function bars(title, items, opts = {}) {
+  const c = el('div', 'card'); c.append(el('h2', '', esc(title)));
+  if (!items || !items.length) { c.append(el('div', 'empty', 'مفيش')); return c; }
+  const max = Math.max(...items.map(i => Math.abs(i[1])), 1);
+  items.forEach(i => {
+    const b = el('div', 'bar');
+    b.innerHTML = `<div class="l"><span>${esc(clean(i[0]))}</span><b>${fmt(i[1])}</b></div>` +
+      `<div class="track"><div class="fill${opts.dark ? ' dk' : ''}" style="width:${Math.max(3, Math.abs(i[1]) / max * 100)}%"></div></div>` +
+      (i.length > 2 && opts.cmp ? `<div class="cmp">${delta(i[1], i[2])}<span>${esc(opts.cmp)}: ${fmt(i[2])}</span></div>` : '');
+    c.append(b);
+  });
+  return c;
+}
+function stacked(title, parts, total) {
+  const c = el('div', 'card'); c.append(el('h2', '', esc(title)));
+  const cols = ['#F0B27F', '#1C1C1C', '#F6D3B3', '#8A857C'];
+  const sum = parts.reduce((a, p) => a + Math.max(p[1], 0), 0) || 1;
+  const s = el('div', 'stack');
+  parts.forEach((p, i) => { const d = el('div'); d.style.width = Math.max(p[1], 0) / sum * 100 + '%'; d.style.background = cols[i % 4]; s.append(d); });
+  c.append(s);
+  const l = el('div', 'leg');
+  parts.forEach((p, i) => l.append(el('span', '', `<i style="background:${cols[i % 4]}"></i>${esc(p[0])}: <b style="color:#1C1C1C">${fmt(p[1])}</b>`)));
+  c.append(l);
+  return c;
+}
+
+const VIEWS = {
+  news(d, app) {
+    $('t').textContent = '📰 فورم المستجدات';
+    $('s').textContent = 'مستجدات يوم ' + d.d + ' (والمقارنة بامبارح)';
+    const g = el('div', 'kpis');
+    d.m.forEach((m, i) => g.append(kpi(m[0], m[1], m[2], 'امبارح', i < 2)));
+    app.append(g);
+    app.append(bars('اللي دخل الحسابات', d.in));
+    app.append(bars('اللي خرج من الحسابات', d.out, {dark: true}));
+    if (d.notes && d.notes.length) {
+      const c = el('div', 'card'); c.append(el('h2', '', 'ملاحظات'));
+      d.notes.forEach(n => c.append(el('div', 'note', `<small>${esc(n[0])}</small>${esc(n[1])}`)));
+      app.append(c);
+    }
+  },
+  rep(d, app) {
+    $('t').textContent = '📊 فورم التقارير';
+    $('s').textContent = 'آخر تحديث ' + d.u;
+    const g = el('div', 'kpis');
+    g.append(kpi('إجمالي السيولة', d.liq.total, undefined, '', true));
+    g.append(kpi('مبيعات الشهر', d.sal[0], d.sal[1], 'اللي فات'));
+    g.append(kpi('مصروفات الشهر', d.exp[0], d.exp[1], 'اللي فات'));
+    app.append(g);
+    app.append(stacked('الموقف النقدي', d.liq.g, d.liq.total));
+    app.append(bars('أكبر الحسابات رصيدًا', d.liq.it));
+    app.append(bars('المصروفات حسب البند (الشهر ده)', d.exp[2].map(x => [x[0], x[1], x[2]]), {cmp: 'اللي فات', dark: true}));
+    app.append(bars(`العملاء (المستحق لنا ${fmt(d.cli[0])} ج - ${d.cli[1]} عميل)`, d.cli[2]));
+    app.append(bars(`الموردين (المستحق علينا ${fmt(d.sup[0])} ج - ${d.sup[1]} مورد)`, d.sup[2], {dark: true}));
+  },
+  gcus(d, app) {
+    $('t').textContent = '🧾 فورم العهد';
+    $('s').textContent = 'عهدتك الشخصية - ' + d.u;
+    const g = el('div', 'kpis');
+    g.append(kpi('الرصيد الحالي', d.bal, undefined, '', true));
+    g.append(kpi('المستلم', d.got));
+    g.append(kpi('المنصرف', d.spent));
+    app.append(g);
+    app.append(bars('المستلم والمنصرف', [['المستلم', d.got], ['المنصرف', d.spent]]));
+    if (d.bal < -0.5) app.append(el('div', 'note', '⚠️ المنصرف أكبر من المستلم'));
+  },
+  mcus(d, app) {
+    $('t').textContent = '🧾 فورم العهدة الشخصية';
+    $('s').textContent = 'عهدة م/ محمد حسن - ' + d.u;
+    const g = el('div', 'kpis');
+    g.append(kpi('الرصيد الحالي', d.bal, undefined, '', true));
+    g.append(kpi('إجمالي المستلم', d.got));
+    g.append(kpi('إجمالي المنصرف', d.spent));
+    app.append(g);
+    const st = d.bal > 0.5 ? 'لسه معاك عهدة بـ ' + fmt(d.bal) + ' ج'
+             : d.bal < -0.5 ? '⚠️ المنصرف أكبر من المستلم بـ ' + fmt(-d.bal) + ' ج' : '✅ العهدة متسوّية بالكامل';
+    app.append(el('div', 'note', esc(st)));
+    app.append(bars('كل بياع صرف كام من العهدة', d.by));
+    if (d.oth > 0) app.append(el('div', 'note', 'رد عهدة وحاجات تانية: ' + fmt(d.oth) + ' ج'));
+  },
+  grep(d, app) {
+    $('t').textContent = '📊 فورم التقارير';
+    $('s').textContent = 'آخر تحديث ' + d.u;
+    const g = el('div', 'kpis');
+    g.append(kpi('إجمالي التحصيلات', d.tp, undefined, '', true));
+    g.append(kpi('تسوية العهدات', d.ts, undefined, '', true));
+    app.append(g);
+    app.append(bars('التحصيلات حسب البياع', d.pay));
+    app.append(bars('تسوية العهدات', d.stl, {dark: true}));
+  }
+};
+
+async function decode(s, z) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '=';
+  const bin = atob(s); const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  if (z === '1') {
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return await new Response(stream).text();
+  }
+  return new TextDecoder().decode(bytes);
+}
+(async () => {
+  const app = $('app');
+  try {
+    const d = JSON.parse(await decode(qs.get('d') || '', qs.get('z') || '0'));
+    VIEWS[d.k](d, app);
+  } catch (e) {
+    $('t').textContent = 'التقرير';
+    app.append(el('div', 'err', 'مقدرتش أعرض التقرير. ارجع للبوت واضغط الزرار تاني، ولو فضل كده حدّث تليجرام.'));
+  }
+})();
+</script>
+</body>
+</html>

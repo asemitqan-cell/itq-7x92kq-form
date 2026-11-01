@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>فورم</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --who:#6F8FB8; --who-t:#EEF3FA; --who-b:#C9D8EC;
+  --amt:#6FA88A; --amt-t:#EEF7F1; --amt-b:#C6E2D2;
+  --typ:#9A8BC2; --typ-t:#F4F1FA; --typ-b:#D9D1EC;
+  --acc:#D49A6A; --acc-t:#FBF2E9; --acc-b:#EBD3BC;
+  --dat:#6FAAA6; --dat-t:#EAF6F5; --dat-b:#C3E0DD;
+  --msc:#9AA3AE; --msc-t:#F4F5F7; --msc-b:#DADFE5;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#F7F5F0;color:#2F3A45;font-family:"Segoe UI",Tahoma,Arial,sans-serif;font-size:16px}
+body{padding:12px 12px 120px}
+h1{font-size:18px;margin:4px 4px 12px;text-align:center;color:#2F3A45}
+.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,50,30,.10)}
+.lab{display:inline-block;color:#fff;font-weight:700;font-size:15px;padding:4px 12px;border-radius:999px;margin-bottom:10px}
+.lab small{font-weight:400;opacity:.9}
+input[type=text],input[type=date],input[type=search],select{width:100%;font:inherit;padding:12px;border-radius:10px;border:2px solid;color:#0F172A;outline:none}
+input:focus,select:focus{box-shadow:0 0 0 3px rgba(15,23,42,.15)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{flex:1 1 calc(50% - 8px);min-width:120px;font:inherit;text-align:right;padding:11px 12px;border-radius:10px;border:2px solid;cursor:pointer;color:#2F3A45}
+.chip.sel{color:#fff;font-weight:700}
+.chip .num{display:block;font-size:12px;opacity:.85;direction:ltr;text-align:right}
+.sub{font-size:13px;font-weight:700;margin:10px 0 6px;color:#5B6672}
+.sub:first-of-type{margin-top:0}
+select[size]{padding:4px}
+select option{padding:8px}
+.picked{margin-top:6px;font-size:14px;font-weight:700}
+.sum{background:#FFFFFF;color:#2F3A45;border:2px solid #E7E1D5}
+.sum h2{font-size:16px;margin:0 0 8px}
+.sum .row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid #EEE9DE;font-size:15px}
+.sum .row:last-child{border:0}
+.sum .k{opacity:.8}
+.sum .miss{color:#C97B6B}
+.sum .v{font-weight:700;text-align:left}
+.btn{position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));background:#6FA88A;color:#fff;border:0;border-radius:14px;font:inherit;font-weight:800;font-size:18px;padding:15px;box-shadow:0 4px 12px rgba(0,0,0,.25)}
+.btn:disabled{background:#94A3B8}
+.warn{background:#FBF2E9;border:2px solid #EBD3BC;border-radius:12px;padding:10px;margin-bottom:12px;font-size:14px}
+.note{font-size:13px;color:#475569;margin:-4px 4px 12px;text-align:center}
+</style>
+</head>
+<body>
+<h1 id="title"></h1>
+<div id="who" class="note"></div>
+<div id="warn"></div>
+<div id="form"></div>
+<div class="card sum" id="sum"></div>
+<button class="btn" id="send">إرسال ✅</button>
+
+<script>
+const DATA = {"titles": {"pay": "فورم دفعة عميل", "opay": "فورم دفعة عميل", "cash": "فورم حركة الخزنة", "sup": "فورم موردين", "exp": "فورم مصروف", "inc": "فورم إيراد", "cus": "فورم عهدة", "adv": "فورم سلفة", "sale": "فورم مبيعات", "xfer": "فورم تحويل بين الحسابات"}, "types": ["دفعة التعاقد 75 %", "دفعة التوريد 95 %", "دفعة الاستلام", "رسوم معاينه", "رسوم صيانه"], "opts": [["cash", "الخزينة الرئيسية", "💵 الخزينة الرئيسية"], ["cash", "الخزينة الفرعية", "💵 الخزينة الفرعية"], ["bank", "بنك البركة", "🏦 بنك البركة"], ["bank", "بنك QNB الشخصي (أحمد رأفت)", "🏦 بنك QNB الشخصي (أحمد رأفت)"], ["bank", "أخرى", "🏦 أخرى"], ["wallet", "فودافون كاش", "📱 فودافون كاش"], ["wallet", "فودافون كاش (المحفظة الاحتياطية)", "📱 فودافون كاش المحفظة الاحتياطية"], ["wallet", "محفظة مستر جمعة", "📱 م/ محمد جمعة"]], "nums": {"فودافون كاش": "01020401577", "محفظة مستر جمعة": "01008557655"}, "sellers": ["م/ احمد رافت", "م/ محمد جمعه", "م/ محمد حسن", "م/ احمد خليل", "م/ جمعه عيد", "م/ عمرو جمال", "م/ يوسف شعبان", "م/ احمد عوض", "م/ احمد عطيه", "م/ هشام ابراهيم", "م/ شريف منصور", "م/ مصطفي عبد اللطيف", "م/ عبدالرحمن عفيفي", "م/ احمد علاء", "م/ محمد رافت", "م/ اسلم", "م/ محمد بسيوني", "م/ احمد مبروك", "م/ باسم فتحي"], "suppliers": ["البركة بلس", "ناصر فيجين جلاس", "م . صابر حسن شيش", "الامين ايما بن", "شركة foxywin", "رجب ارجات", "شرفه SHORFA", "المصطفى جلاس", "مكتب دواويين للإستشارات المالية", "شركة فودافون مصر", "احمد عيد لابيكس", "احمد مرسي كومبن ( الزيتون )", "احمد نحله بريمير", "أكابن مورد أصل", "الاتحاد", "الألومنيوم محمد ناصر", "الحلبي", "الشرقاوي", "الصفوة- ايمابين", "إيمابن", "ايمن ارجات", "سكاي", "ليمينيتيد", "محمد السيد الحداد", "محمود مزايا", "مدار شيش", "مصطفى (بليسيه)", "هيثم-كرافت", "وليد زجاج", "وين تاج-كومبن", "وينتك المريوطية", "supreme مورد ديكونيك", "شركة الامل", "مورد نقدي"], "stypes": ["الدفعات", "خصومات", "قيمة المشتريات", "مرتجعات المشتريات", "رصيد إفتتاحى"], "blocked": ["قيمة المشتريات", "مرتجعات المشتريات", "رصيد إفتتاحى", "عهدة مستديمة"], "ctypes": ["عهدة مؤقتة", "عهدة مستديمة", "رد عهدة", "تسوية عهدة"], "atypes": ["سلفة", "رد سلفة"], "emps": ["احمد عوض انور معروف", "بهاء فارس ابراهيم حسن", "جمعه عيد جمعه احمد", "جهاد طارق فاروق محمد", "حازم سلامه موسى على", "شريف مصطفي محمد عبدالرحيم", "عبدالرحمن اشرف أبوالقاسم ياسين", "عبدالرحمن محمد سيد عثمان", "عبدالله أسامة عبدالله محمد الشاهد", "عمر عادل سلطان أبوالقاسم", "عمرو جمال سليمان عبدالغنى", "محمد ايهاب محرم عبدالحميد", "محمد حسن محمد عبدالله عفيفي", "محمد حسن ياسين حسن", "محمد خير عبدالمجيد غنام", "محمود سمير ابوالاسعاد السيد فرج", "محمود مراد محمد محمد احمد الروبى", "مصطفى سيد محمد محمد مصطفى", "مصطفى محمد عبداللطيف امين طوطح", "هبة الله رأفت", "هشام ابراهيم عبدالجواد عبدالرازق", "ياسمين عبدالحافظ", "يحى عبدالجواد هلال عبدالجواد غريب", "احمد اسامه حسن مجرب محمد", "احمد رأفت حلمى عكاشة احمد", "احمد سعد محمود طه", "احمد عبدالله السيد مبروك", "أحمد عطيه ميزار على", "احمد محمد جمال الدين عبدالله", "احمد محمد سعيد عبدالفتاح سمك", "اسلام محمد ابوبكر حسن", "اسلام محمد جمال الدين عبدالله", "اسلام محمود فرحات محمد", "اسلم مجدى عوض ابراهيم", "اشواق مشهور", "ايهاب حامد محمد حامد صالح", "باسم فتحي كامل علي", "برنس عبدالصادق سيد محمد", "بسام محمد رفاعى محمد", "بكرى رمضان بكرى محمد", "جبريل شعبان جبريل عبادى", "خميس فراج خميس سلامه", "سالمان نجيب محمد على عبدالعال", "شعبان حسن بيومى محمد ابراهيم", "عاطف فوزى حمد عبدالرحمن", "عبدالحميد خالد عبدالله", "عبدالرحمن احمد حامد عبده سالم", "عبدالرحمن عمر", "عبدالرحمن فوزى خليل محمد خليل", "عبدالرحمن محمد مخزن", "عبدالله فرج محمود جمعه خميس", "على عماد على راشد محمد", "على فوزى احمد عبدالرحمن", "عمر مصطفى اصلان يوسف", "محسن فراس عبدالحى", "محمد ابراهيم السيد بسيوني", "محمد ابراهيم السيد حسين", "محمد احمد محمد على ابراهيم", "محمد اشرف تركيبات", "محمد ايمن طه ابراهيم طه مصطفي", "محمد جمعه عبدربه عبدالرحمن", "محمد حربى عويس عبدالتواب", "محمد رأفت حلمى عكاشة", "محمد صالح", "محمد عبدالرحمن المشرقي", "محمد عبدالمقصود عبدالعاطى عبدالمقصود", "محمد على محمد جمعه السيد", "محمد فرج محمود جمعه", "محمد كيلانى دريس عامر عزيز", "محمد مصطفى مفتاح أحمد", "محمد مصطفي محمد امين", "محمود هانى احمد حسن", "مصطفى عبدالبصير على العزب", "مصطفى محمد عبدالعزيز محمد", "موسى حسن سعيد موسى فضل", "هاني عبدالتواب", "ياسر احمد صابر عبدالعظيم طه", "يحيي عاطف احمد برزى عبدالعال", "يوسف صبحى عبدالسميع عبدالحميد", "يوسف عادل جلال محمد", "هانى المشرقي", "محمد سالم", "اسلام المشرقي", "محمد ايمن المشرقي", "جمال بهي الدين", "عبد الرحمن محمد جمعة", "صلاح الزمر", "عاصم حسام طه"], "exp": {"l1": ["م_عموميه_واداريه", "م_البيع_والتوزيع", "تكاليف_النشاط", "م_تسويقيه"], "l2": {"م_عموميه_واداريه": ["الاجور_والمرتبات", "اتعاب_مهنية", "ادوات مكتبية", "اكراميات", "أمن وحراسة", "انتقالات", "ايجار", "إستهلاك_الغاز", "إستهلاك_الكهرباء", "إستهلاك_المياه", "برامج_ومستلزمات_كمبيوتر", "تليفونات_وانترنت", "سفر ورحلات", "رسوم_وغرامات", "شحن وبريد", "صيانة_عامه", "ضيافه_واستقبال", "م_التأمينات_الاجتماعية", "م_التأمينات_الصحية", "م_بنكية", "م_السيارات", "م_بوفيه_ونظافة", "م_نثرية", "اهلاك_الاصوال_الثابته", "مشال_وتحميل", "بريد ومراسلات", "دورات_تدريبية", "مطبوعات", "ديون_معدومة", "الصدقات_والتبرعات", "م._ضرائب", "م.ترفيهية", "رعاية_طبية"], "م_البيع_والتوزيع": ["الاجور_والمرتبات", "ادوات مكتبية", "اكراميات", "أمن وحراسة", "انتقالات", "ايجار", "برامج_ومستلزمات_كمبيوتر", "تليفونات_وانترنت", "صيانة_عامه", "ضيافه_واستقبال", "م_التأمينات_الاجتماعية", "م_التأمينات_الصحية", "م_بوفيه_ونظافة", "م_السيارات", "م_نثرية", "نقل_وشحن", "إستهلاك_الغاز", "إستهلاك_الكهرباء", "إستهلاك_المياه", "دورات_تدريبية", "م. توالف", "مشال_وتحميل", "اهلاك_الاصوال_الثابته", "مطبوعات", "م. الشحن والنقل", "خصم مسموح به"], "تكاليف_النشاط": ["تكاليف_نشاط_ثابتة", "تكاليف_نشاط_متغيرة", "تكلفة_البضاعة_المباعة"], "م_تسويقيه": ["الاجور_والمرتبات", "دعاية_اعلان", "ندوات_ومعارض", "هدايا"]}, "l3": {"م_بنكية": ["مصاريف كشف حساب", "اصدار دفاتر شيكات", "عمولة تحصيل شيكات", "مصاريف ارتداد شيك", "فوائد مدينة", "م.الصيانة الشهرية", "عمولة الحد الأدنى للحساب", "عمولات خطابات الضمان", "عمولة.سداد.المرتبات", "عمولات تحويل", "عمولة.التحصيل.بالفيزا", "عمولة.التحصيل.بالمحفظة.الإلكترونية", "مصاريف فح حساب"], "اتعاب_مهنية": ["محاسب_قانونى", "محاماه", "Freelancing", "توظيف"], "تكاليف_نشاط_متغيرة": ["نقل_وشحن", "م_السيارات", "م.تعبئة_وتغليف", "انتقالات", "مطبوعات", "اكراميات", "مصاريف المصنع", "تكلفة زجاج", "تكلفة بيلسيه"], "اهلاك_الاصوال_الثابته": ["إهلاك_اثاث_ومكاتب", "إهلاك_أنظمة_الأمان_والمراقبة", "إهلاك_اجهزه_كمبيوتر_وملحقاتها", "إهلاك_مبانى_وعقارات", "إهلاك_اجهزه_كهربائية_وتكييف", "إهلاك_وسائل_اتصالات", "إهلاك_تجهيزات_وديكورات", "إهلاك_السيارات_والشاحنات", "إهلاك_الأدوات_ومعدات", "إهلاك_الآلات_والماكينات"], "الاجور_والمرتبات": ["أجر_أساسى", "عمولات_البيع", "عمولات_التحصيل", "مكافات", "بدل_إنتقالات", "بدل_سفر", "بدل_وجبة", "بدل زي و ملبوسات", "يوميات عمال", "أجر_إضافى"], "تكلفة_البضاعة_المباعة": ["تكلفة المبيعات", "تكلفة مردودات المبيعات", "الخصم المكتسب"], "تكاليف_نشاط_ثابتة": ["الاجور_والمرتبات", "تليفونات_وانترنت", "ايجار", "ادوات مكتبية", "صيانة_عامه", "إستهلاك_الكهرباء", "إستهلاك_الغاز", "إستهلاك_المياه", "م_بوفيه_ونظافة", "م_نثرية", "أمن وحراسة", "برامج_ومستلزمات_كمبيوتر", "اهلاك_الاصوال_الثابته"], "دعاية_اعلان": ["Facebook", "TikTok", "Linked in", "What's App", "مطبوعات"], "نقل_وشحن": ["وقود", "زيوت", "قطع_غيار", "صيانة", "م_تراخيص", "رسوم_طريق_كارتات", "ايجار_خارجي", "اهلاك_السيارة", "مرتب السائق"], "م_السيارات": ["وقود", "زيوت", "قطع_غيار", "صيانة", "م_تراخيص", "رسوم_طريق_كارتات", "ايجار", "جراج"]}}, "inc": {"l1": [], "l2": {}, "l3": {}}};
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const qs = new URLSearchParams(location.search);
+const TYPE = qs.get('f') || 'pay';
+const WHO = qs.get('who') || '';
+let PRE = {};
+try { if (qs.get('pre')) PRE = JSON.parse(decodeURIComponent(escape(atob(qs.get('pre').replace(/-/g,'+').replace(/_/g,'/'))))); } catch(e) {}
+
+const GROUPS = {
+  who:{c:'--who',t:'--who-t',b:'--who-b'}, amt:{c:'--amt',t:'--amt-t',b:'--amt-b'},
+  typ:{c:'--typ',t:'--typ-t',b:'--typ-b'}, acc:{c:'--acc',t:'--acc-t',b:'--acc-b'},
+  dat:{c:'--dat',t:'--dat-t',b:'--dat-b'}, msc:{c:'--msc',t:'--msc-t',b:'--msc-b'}
+};
+const AR = '٠١٢٣٤٥٦٧٨٩';
+const fixDigits = s => String(s).replace(/[٠-٩]/g, d => AR.indexOf(d)).replace(/[٫]/g,'.').replace(/[٬,]/g,'');
+const pretty = s => String(s).replace(/_/g,' ');
+const today = () => { const d=new Date(), p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); };
+const isCash = a => a && a.kind === 'cash';
+const STL = 'تسوية عهدة';
+
+// ---------- تعريف الحقول لكل فورم ----------
+const T = (key,label,g,req=true) => ({key,label,kind:'text',g,req});
+const N = (key,label='المبلغ') => ({key,label,kind:'num',g:'amt',req:true});
+const C = (key,label,g,list,req=true) => ({key,label,kind:'choice',g,req,list});
+const ACC = (key,label) => ({key,label,kind:'acc',g:'acc',req:true});
+const DT = () => ({key:'date',label:'التاريخ',kind:'date',g:'dat',req:true});
+const VCH = (...keys) => ({key:'voucher',label:'رقم الوصل',kind:'text',g:'acc',req:true,
+  show:v => keys.some(k => isCash(v[k]))});
+const lvl = (root) => [
+  C('l1', root==='exp'?'نوع المصروف':'نوع الإيراد','typ', v => DATA[root].l1),
+  C('l2','البند','typ', v => (DATA[root].l2[v.l1]||[])),
+  {...C('l3','التفصيل','typ', v => (DATA[root].l3[v.l2]||[])), show:v => (DATA[root].l3[v.l2]||[]).length>0}
+];
+const FORMS = {
+  pay: () => [T('client','اسم العميل','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
+  opay: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل','who'), N('amount'), C('ptype','نوع الدفعة','typ',()=>DATA.types), ACC('acc','الدفع تم من'), VCH('acc'), DT(), T('notes','ملاحظات','msc',false)],
+  cash: () => [C('kind','النوع','typ',()=>['إيراد','صرف']),
+               T('party', null,'who'), T('bayan','البيان','msc'), N('amount'), DT(), T('voucher','رقم الوصل','acc')],
+  sup: () => [C('supplier','المورد','who',()=>DATA.suppliers), C('stype','النوع','typ',()=>DATA.stypes), N('amount'),
+              {...ACC('acc','اتدفع من'), show:v => v.stype===DATA.stypes[0]}, VCH('acc'), DT()],
+  exp: () => [...lvl('exp'), N('amount'), ACC('acc','اتدفع من'), VCH('acc'), DT(), T('note','ملاحظة','msc',false)],
+  inc: () => [...lvl('inc'), N('amount'), ACC('acc','اتحصّل في'), VCH('acc'), DT(), T('note','ملاحظة','msc',false)],
+  cus: () => [C('ctype','نوع العهدة','typ',()=>DATA.ctypes),
+              ...[C('emp','الموظف','who',()=>DATA.emps), N('amount'), ACC('acc','الحساب'), VCH('acc'), DT()]
+                .map(x => ({...x, show: v => v.ctype !== STL && (!x.show || x.show(v))}))],
+  adv: () => [C('atype','النوع','typ',()=>DATA.atypes), C('emp','الموظف','who',()=>DATA.emps), N('amount'), ACC('acc','الحساب'), VCH('acc'), DT()],
+  sale: () => [C('seller','البياع','who',()=>DATA.sellers), T('client','اسم العميل','who'), T('project','رقم المشروع','msc'), N('amount'), DT()],
+  xfer: () => [ACC('acc','التحويل من'), ACC('acc2','التحويل إلى'), N('amount'), VCH('acc','acc2'), DT()]
+};
+
+const S = { vals:{}, dateMode:'today' };
+Object.assign(S.vals, PRE);
+if (!S.vals.date) S.vals.date = today();
+S.dateMode = S.vals.date === today() ? 'today' : 'other';
+if (TYPE === 'cash') S.vals.voucher = S.vals.voucher || '';
+
+function fields() {
+  const f = (FORMS[TYPE] || FORMS.pay)();
+  return f.filter(x => !x.show || x.show(S.vals)).map(x => {
+    if (x.key === 'party') return {...x, label: S.vals.kind === 'صرف' ? 'اسم المستلم' : (S.vals.kind === 'إيراد' ? 'اسم اللي دفع' : 'اسم اللي دفع / المستلم')};
+    return x;
+  });
+}
+
+// ---------- الرسم ----------
+function el(tag, attrs={}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e[k] = v; else e.setAttribute(k, v);
+  }
+  kids.flat().forEach(c => e.append(c && c.nodeType ? c : document.createTextNode(c ?? '')));
+  return e;
+}
+const col = (g,k) => getComputedStyle(document.documentElement).getPropertyValue(GROUPS[g][k]).trim();
+
+function chip(g, text, selected, onclick, sub) {
+  const b = el('button', {type:'button', class:'chip'+(selected?' sel':'')}, (selected?'● ':'○ ') + text);
+  b.style.background = selected ? col(g,'c') : col(g,'t');
+  b.style.borderColor = selected ? col(g,'c') : col(g,'b');
+  if (sub) b.append(el('span', {class:'num'}, sub));
+  b.onclick = onclick;
+  return b;
+}
+
+function textInput(f) {
+  const i = el('input', {type:'text', autocomplete:'off', placeholder:'اكتب هنا'});
+  if (f.kind === 'num') { i.setAttribute('inputmode','decimal'); i.placeholder = '0.00'; }
+  i.value = S.vals[f.key] ?? '';
+  i.style.background = col(f.g,'t'); i.style.borderColor = col(f.g,'b');
+  i.oninput = () => { S.vals[f.key] = i.value; summary(); };
+  return i;
+}
+
+function bigList(f, list) {
+  const box = el('div');
+  const s = el('input', {type:'search', placeholder:'🔍 اكتب جزء من الاسم للبحث'});
+  const sel = el('select', {size:'5'});
+  s.style.background = col(f.g,'t'); s.style.borderColor = col(f.g,'b');
+  sel.style.background = col(f.g,'t'); sel.style.borderColor = col(f.g,'b');
+  const picked = el('div', {class:'picked', style:'color:'+col(f.g,'c')});
+  const fill = () => {
+    const q = s.value.trim();
+    sel.innerHTML = '';
+    list.filter(x => !q || pretty(x).includes(q)).forEach(x => {
+      const o = el('option', {value:x}, pretty(x)); if (S.vals[f.key] === x) o.selected = true; sel.append(o);
+    });
+  };
+  const show = () => { picked.textContent = S.vals[f.key] ? '● ' + pretty(S.vals[f.key]) : ''; };
+  s.oninput = fill;
+  sel.onchange = () => { if ((DATA.blocked || []).includes(sel.value)) { blockedMsg(sel.value); return; } S.vals[f.key] = sel.value; show(); dependent(f.key); summary(); };
+  fill(); show();
+  box.append(s, el('div',{style:'height:6px'}), sel, picked);
+  return box;
+}
+
+function dependent(key) {
+  // لو اتغير حقل بيتحكم في اللي بعده: نمسح التابع ونعيد الرسم
+  const kill = {l1:['l2','l3'], l2:['l3'], stype:['acc','voucher'], kind:[]}[key];
+  if (kill) kill.forEach(k => delete S.vals[k]);
+  if (['l1','l2','stype','acc','acc2','kind'].includes(key)) build();
+}
+
+function blockedMsg(x) {
+  const m = 'قيد ' + x + ' لسه مش متحدد، فماتسجلش حاجة. ارجع لمسؤول الحسابات. 🚫';
+  if (tg && tg.showAlert) tg.showAlert(m); else alert(m);
+}
+function choiceBlock(f) {
+  const list = f.list(S.vals) || [];
+  if (!list.length) return el('div', {class:'note'}, 'اختار الحقل اللي قبله الأول');
+  if (list.length > 12) return bigList(f, list);
+  const wrap = el('div', {class:'chips'});
+  list.forEach(x => wrap.append(chip(f.g, pretty(x), S.vals[f.key] === x, () => {
+    if ((DATA.blocked || []).includes(x)) { blockedMsg(x); return; }
+    S.vals[f.key] = x; dependent(f.key); build();
+  })));
+  return wrap;
+}
+
+function accBlock(f) {
+  const box = el('div');
+  const names = {cash:'💵 خزن', bank:'🏦 بنوك', wallet:'📱 محافظ'};
+  ['cash','bank','wallet'].forEach(k => {
+    const items = DATA.opts.filter(o => o[0] === k);
+    if (!items.length) return;
+    box.append(el('div', {class:'sub'}, names[k]));
+    const wrap = el('div', {class:'chips'});
+    items.forEach(o => {
+      const cur = S.vals[f.key];
+      const sel = cur && cur.kind === o[0] && cur.method === o[1];
+      wrap.append(chip(f.g, o[2].replace(/^[^\s]+\s/, ''), sel, () => {
+        S.vals[f.key] = {kind:o[0], method:o[1]};
+        if (!o[1].startsWith('أخرى')) delete S.vals[f.key === 'acc' ? 'other_bank' : 'other_bank2'];
+        build();
+      }, DATA.nums[o[1]] || ''));
+    });
+    box.append(wrap);
+  });
+  const cur = S.vals[f.key];
+  if (cur && cur.method.startsWith('أخرى')) {
+    const ok = f.key === 'acc' ? 'other_bank' : 'other_bank2';
+    box.append(el('div', {class:'sub'}, 'اكتب اسم البنك'));
+    const i = el('input', {type:'text', placeholder:'اسم البنك'});
+    i.style.background = col(f.g,'t'); i.style.borderColor = col(f.g,'b'); i.value = S.vals[ok] || '';
+    i.oninput = () => { S.vals[ok] = i.value; summary(); };
+    box.append(i);
+  }
+  return box;
+}
+
+function dateBlock(f) {
+  const box = el('div'); const wrap = el('div', {class:'chips'});
+  wrap.append(chip(f.g, 'اليوم', S.dateMode === 'today', () => { S.dateMode = 'today'; S.vals.date = today(); build(); }));
+  wrap.append(chip(f.g, 'تاريخ تاني', S.dateMode === 'other', () => { S.dateMode = 'other'; build(); }));
+  box.append(wrap);
+  if (S.dateMode === 'other') {
+    const i = el('input', {type:'date', style:'margin-top:8px'});
+    i.style.background = col(f.g,'t'); i.style.borderColor = col(f.g,'b'); i.value = S.vals.date || '';
+    i.onchange = () => { S.vals.date = i.value; summary(); };
+    box.append(i);
+  }
+  return box;
+}
+
+function build() {
+  const root = document.getElementById('form'); root.innerHTML = '';
+  fields().forEach(f => {
+    const card = el('div', {class:'card'});
+    const lab = el('span', {class:'lab'}, f.label, f.req ? '' : el('small', {}, ' (اختياري)'));
+    lab.style.background = col(f.g,'c');
+    card.append(lab);
+    if (f.kind === 'text' || f.kind === 'num') card.append(textInput(f));
+    else if (f.kind === 'choice') card.append(choiceBlock(f));
+    else if (f.kind === 'acc') card.append(accBlock(f));
+    else if (f.kind === 'date') card.append(dateBlock(f));
+    root.append(card);
+  });
+  if (TYPE === 'cus' && S.vals.ctype === STL) {
+    root.append(el('div', {class:'warn'}, 'تسوية العهدة بتتم بخطوات في الشات. اضغط إرسال وبعدها كمّل من الزرار اللي هيظهرلك.'));
+  }
+  summary();
+}
+
+// ---------- الملخص والتحقق ----------
+function valueText(f) {
+  const v = S.vals[f.key];
+  if (v === undefined || v === null || v === '') return '';
+  if (f.kind === 'acc') {
+    const o = DATA.opts.find(o => o[0] === v.kind && o[1] === v.method);
+    const other = S.vals[f.key === 'acc' ? 'other_bank' : 'other_bank2'];
+    return (o ? o[2].replace(/^[^\s]+\s/, '') : v.method) + (other ? ' (' + other + ')' : '');
+  }
+  if (f.kind === 'num') { const n = parseFloat(fixDigits(v)); return isNaN(n) ? '' : n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  return pretty(String(v).trim());
+}
+function problems() {
+  const out = [];
+  fields().forEach(f => {
+    if (f.kind === 'num') {
+      const n = parseFloat(fixDigits(S.vals[f.key] || ''));
+      if (!(n > 0)) out.push(f.label);
+    } else if (f.req) {
+      const v = S.vals[f.key];
+      if (v === undefined || v === null || String(typeof v === 'object' ? v.method : v).trim() === '') out.push(f.label);
+      else if (f.kind === 'acc' && v.method.startsWith('أخرى') && !(S.vals[f.key==='acc'?'other_bank':'other_bank2']||'').trim()) out.push('اسم البنك');
+    }
+  });
+  return out;
+}
+function summary() {
+  const box = document.getElementById('sum'); box.innerHTML = '';
+  box.append(el('h2', {}, '🧾 ملخص العملية'));
+  if (WHO && TYPE === 'pay') box.append(el('div', {class:'row'}, el('span',{class:'k'},'البياع'), el('span',{class:'v'}, WHO)));
+  fields().forEach(f => {
+    const t = valueText(f);
+    box.append(el('div', {class:'row'}, el('span',{class:'k'}, f.label),
+      t ? el('span',{class:'v'}, t) : el('span',{class:'v miss'}, f.req ? 'ناقص' : '—')));
+  });
+  const p = problems();
+  const b = document.getElementById('send');
+  b.textContent = p.length ? 'لسه ناقص: ' + p.length + ' حقل' : 'إرسال ✅';
+  b.disabled = false;
+  b.style.background = p.length ? '#B8C0C8' : '#6FA88A';
+  if (tg && tg.MainButton) { tg.MainButton.hide(); }
+}
+
+function submit() {
+  const p = problems();
+  if (p.length) { const m = 'لسه ناقص: ' + p.join('، '); if (tg && tg.showAlert) tg.showAlert(m); else alert(m); return; }
+  const vals = {};
+  fields().forEach(f => {
+    let v = S.vals[f.key];
+    if (v === undefined || v === null || v === '') return;
+    if (f.kind === 'num') v = parseFloat(fixDigits(v));
+    else if (typeof v === 'string') v = v.trim();
+    vals[f.key] = v;
+    if (f.kind === 'acc') { const ok = f.key === 'acc' ? 'other_bank' : 'other_bank2'; if (S.vals[ok]) vals[ok] = S.vals[ok].trim(); }
+  });
+  const data = JSON.stringify({type:TYPE, vals});
+  if (tg && tg.sendData) tg.sendData(data); else { console.log(data); alert('(تجربة خارج تليجرام)\n' + data); }
+}
+
+document.getElementById('send').onclick = submit;
+document.getElementById('title').textContent = '📝 ' + (DATA.titles[TYPE] || 'فورم');
+document.getElementById('who').textContent = TYPE === 'pay' && WHO ? 'البياع: ' + WHO : '';
+if (TYPE === 'inc' && !(DATA.inc.l1 || []).length) {
+  document.getElementById('warn').append(el('div', {class:'warn'}, 'تاب Income_Accounts في الشيت فاضي، فمفيش أنواع إيراد تظهر. املاه وبعدين اعمل /buildform تاني.'));
+}
+build();
+</script>
+</body>
+</html>
