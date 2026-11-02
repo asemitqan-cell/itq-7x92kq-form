@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>السيولة</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:#FBF6EE;--card:#fff;--ink:#1F1F1F;--or:#F2A65A;--or2:#FCE7CF;--mut:#7A7266}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+body{padding:14px 12px 28px}
+h1{font-size:19px;margin:2px 0 4px;text-align:center}
+.up{text-align:center;color:var(--mut);font-size:13px;margin-bottom:12px}
+.tot{background:var(--ink);color:#fff;border-radius:16px;padding:16px;text-align:center;margin-bottom:12px}
+.tot small{display:block;opacity:.8;font-size:14px}
+.tot b{font-size:30px;color:var(--or)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.g{background:var(--or2);border:2px solid var(--or);border-radius:14px;padding:10px;text-align:center}
+.g small{display:block;font-size:13px;color:var(--mut)}
+.g b{font-size:18px}
+.card{background:var(--card);border-radius:14px;padding:6px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card h2{font-size:15px;margin:8px 0}
+.r{display:flex;justify-content:space-between;gap:8px;padding:9px 0;border-top:1px solid #EFE7DA;font-size:15px}
+.r b{white-space:nowrap}
+.neg{color:#C0392B}
+</style></head><body>
+<h1>💧 السيولة</h1><div class="up" id="up"></div>
+<div class="tot"><small>إجمالي السيولة</small><b id="tot">—</b> <small>جنيه</small></div>
+<div class="grid" id="g"></div>
+<div class="card"><h2>الحسابات</h2><div id="it"></div></div>
+<script>
+const tg=window.Telegram&&window.Telegram.WebApp; if(tg){tg.ready();tg.expand();}
+const f=n=>Number(n).toLocaleString('en-US');
+let D={};
+try{let p=new URLSearchParams(location.search).get('d')||'';p=p.replace(/-/g,'+').replace(/_/g,'/');p+='='.repeat((4-p.length%4)%4);
+D=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(p),c=>c.charCodeAt(0))));}catch(e){}
+document.getElementById('up').textContent=D.u?('آخر تحديث: '+D.u):'';
+document.getElementById('tot').textContent=D.total!==undefined?f(D.total):'—';
+const g=document.getElementById('g');
+(D.g||[]).forEach(x=>{const d=document.createElement('div');d.className='g';d.innerHTML='<small></small><b></b>';d.children[0].textContent=x[0];d.children[1].textContent=f(x[1]);g.append(d);});
+const it=document.getElementById('it');
+(D.it||[]).forEach(x=>{const r=document.createElement('div');r.className='r';r.innerHTML='<span></span><b></b>';r.children[0].textContent=x[0];r.children[1].textContent=f(x[1]);if(x[1]<0)r.children[1].className='neg';it.append(r);});
+if(!(D.it||[]).length)it.textContent='مفيش بيانات';
+</script></body></html>
