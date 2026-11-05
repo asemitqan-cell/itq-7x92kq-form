@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الأرصدة</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+<style>
+:root{--bg:#FBF6EE;--card:#fff;--ink:#1F1F1F;--or:#F2A65A;--or2:#FCE7CF;--mut:#7A7266}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",Tahoma,Arial,sans-serif}
+body{padding:14px 12px 28px}
+h1{font-size:19px;margin:2px 0 4px;text-align:center}
+.up{text-align:center;color:var(--mut);font-size:13px;margin-bottom:12px}
+.tot{background:var(--ink);color:#fff;border-radius:16px;padding:14px;text-align:center;margin-bottom:12px}
+.tot small{display:block;opacity:.8;font-size:14px}
+.tot b{font-size:28px;color:var(--or)}
+#q{width:100%;font-size:17px;padding:12px 14px;border:2px solid var(--or);border-radius:14px;background:var(--or2);color:var(--ink);margin-bottom:12px;outline:none}
+.card{background:var(--card);border-radius:14px;padding:6px 12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.r{display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid #EFE7DA;font-size:15px}
+.r:first-child{border-top:0}
+.r b{white-space:nowrap}
+.neg{color:#C0392B}
+.note{color:var(--mut);font-size:13px;text-align:center;margin-top:10px}
+.cnt{color:var(--mut);font-size:13px;margin:0 2px 8px}
+</style></head><body>
+<h1 id="t">💰 الأرصدة</h1><div class="up" id="up"></div>
+<div class="tot"><small id="tl">الإجمالي</small><b id="tot">—</b> <small>جنيه</small></div>
+<input id="q" type="search" placeholder="🔎 اكتب جزء من الاسم..." autocomplete="off">
+<div class="cnt" id="cnt"></div>
+<div class="card"><div id="it"></div></div>
+<div class="note" id="more"></div>
+<script>
+const tg=window.Telegram&&window.Telegram.WebApp; if(tg){tg.ready();tg.expand();}
+const f=n=>Number(n).toLocaleString('en-US');
+const norm=s=>String(s).replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/_/g,' ').toLowerCase().trim();
+let D={};
+try{
+  const P=new URLSearchParams(location.search);
+  let p=(P.get('d')||'').replace(/-/g,'+').replace(/_/g,'/');
+  p+='='.repeat((4-p.length%4)%4);
+  const bin=Uint8Array.from(atob(p),c=>c.charCodeAt(0));
+  D=JSON.parse(P.get('z')==='1'?pako.inflateRaw(bin,{to:'string'}):new TextDecoder().decode(bin));
+}catch(e){}
+document.getElementById('t').textContent='💰 '+(D.t||'الأرصدة');
+document.getElementById('up').textContent=D.u?('آخر تحديث: '+D.u):'';
+document.getElementById('tl').textContent='الإجمالي'+(D.s?(' ('+D.s+')'):'');
+document.getElementById('tot').textContent=D.total!==undefined?f(D.total):'—';
+const items=D.it||[];
+const box=document.getElementById('it'), cnt=document.getElementById('cnt');
+function draw(){
+  const toks=norm(document.getElementById('q').value).split(/\s+/).filter(Boolean);
+  const list=items.filter(x=>{const n=norm(x[0]);return toks.every(t=>n.includes(t));});
+  box.innerHTML='';
+  list.forEach(x=>{const r=document.createElement('div');r.className='r';r.innerHTML='<span></span><b></b>';
+    r.children[0].textContent=String(x[0]).replace(/_/g,' ');r.children[1].textContent=f(x[1]);
+    if(x[1]<0)r.children[1].className='neg';box.append(r);});
+  if(!list.length)box.textContent='مفيش نتيجة';
+  cnt.textContent=list.length+' من '+items.length;
+}
+document.getElementById('q').addEventListener('input',draw);
+draw();
+if(D.more>0)document.getElementById('more').textContent='ظاهر أكبر '+items.length+' رصيد بس. فيه '+D.more+' كمان، دوّر عليهم من «عرض عادي» في البوت.';
+</script></body></html>
